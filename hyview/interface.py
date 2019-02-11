@@ -9,13 +9,16 @@ from typing import *
 
 @attr.s
 class AttributeDefinition(object):
+
+    class Types:
+        Global = 'Global'
+        Point = 'Point'
+        Prim = 'Prim'
+        Vertex = 'Vertex'
+        ALL = [Global, Point, Prim, Vertex]
+
     name = attr.ib(type=str)
-    type = attr.ib(type=str, validator=choices([
-        'Global',
-        'Point',
-        'Prim',
-        'Vertex',
-    ]))
+    type = attr.ib(type=str, validator=choices(Types.ALL))
     default = attr.ib(type=Union[str, Tuple, int, float], default=-1)
 
 

@@ -9,4 +9,7 @@ __copyright__ = 'Copyright (c) 2019 Sam Bourne'
 
 
 from hyview.interface import AttributeDefinition, Point, Primitive, Geometry
-from hyview.rpc import send
+from hyview.registry import register as rpc
+
+from hyview.transport import start, app
+from hyview.hy.transport import start_houdini

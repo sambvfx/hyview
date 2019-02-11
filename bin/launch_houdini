@@ -1,8 +1,7 @@
-#! /bin/sh
+#! /bin/bash
 
 # base env stuff
-
-BINDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+BINDIR="$( cd "$( dirname "$( realpath "$0" )" )" >/dev/null 2>&1 && pwd )"
 ROOT=$(dirname "$BINDIR")
 
 VENV=$ROOT/venv/lib/python2.7/site-packages
@@ -21,9 +20,9 @@ export PYTHONPATH=$ROOT:$VENV:$PYTHONPATH
 if [[ -z "${HOUDINI_CMD}" ]]; then
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
         # Linux
-        cd /opt/sidefx/houdini/houdini17.0.459
-        source /opt/sidefx/houdini/houdini17.0.459/houdini_setup
-        /opt/sidefx/houdini/houdini17.0.459/bin/houdini
+        cd /opt/sidefx/houdini/houdini-17.0.459
+        source /opt/sidefx/houdini/houdini-17.0.459/houdini_setup
+        /opt/sidefx/houdini/houdini-17.0.459/bin/houdini
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         # Mac OSX
         "/Applications/Houdini/Houdini17.0.416/Houdini Apprentice 17.0.416.app/Contents/MacOS/happrentice"

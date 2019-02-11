@@ -7,15 +7,11 @@ import os
 
 import hou
 
-import hyview.rpc
-from hyview.constants import CACHE_DIR, LOGGING_LEVEL
-
-import logging
+from hyview.constants import CACHE_DIR
+import hyview.log
 
 
-logging.basicConfig()
-_logger = logging.getLogger(__name__)
-_logger.setLevel(LOGGING_LEVEL)
+_logger = hyview.log.get(__name__)
 
 
 class BatchUpdate(object):
@@ -38,7 +34,7 @@ def reformat(s):
     return '\n'.join(x.strip() for x in s.strip().split('\n'))
 
 
-class ApplicationController(object):
+class HoudiniApplicationController(object):
     def __init__(self, parent=None, cachedir=CACHE_DIR):
         if parent is None:
             parent = hou.node('/obj/hyview')
@@ -53,6 +49,9 @@ class ApplicationController(object):
     @property
     def nodes(self):
         return {n.name(): n for n in self.parent.children()}
+
+    def names(self):
+        return self.nodes.keys()
 
     def clear(self):
         for node in self.parent.children():
@@ -90,16 +89,16 @@ class ApplicationController(object):
             signal_node.moveToGoodPosition()
             signal_node.setInput(0, fnode)
             signal_node.parm('python').set(reformat('''
-                import hyview.hy
-                hyview.hy.rpc_complete(hou.pwd())
+                import hyview.hy.transport
+                hyview.hy.transport.complete(hou.pwd())
             '''))
             signal_node.setDisplayFlag(True)
 
             if not use_cache:
                 python_in = geo.createNode('python')
                 python_in.parm('python').set(reformat('''
-                    import hyview.hy
-                    hyview.hy.rpc_build(hou.pwd())
+                    import hyview.hy.transport
+                    hyview.hy.transport.build(hou.pwd())
                 '''))
                 python_in.moveToGoodPosition()
                 fnode.setInput(0, python_in)
@@ -108,88 +107,24 @@ class ApplicationController(object):
             signal_node.moveToGoodPosition()
 
 
-def build(geo, rpc):
+def build(geo, attrs, points):
     """
     Build a geometry in Houdini.
 
     Parameters
     ----------
     geo : hou.Geometry
-    rpc : hyview.rpc.RPCGeo
-        NOTE: We lie here about the type and pretend we're dealing with our
-        RPCGeo object, even though we're interacting with it via the
-        `zeroprc.Client`.
+    attrs : Iterable[Union[hyview.interface.AttributeDefinition, Dict[str, Any]]]
+    points : Iterable[Union[hyview.interface.Point, Dict[str, Any]]]
     """
-    for attr in rpc.iter_attributes():
+    for attr in attrs:
         geo.addAttrib(
             getattr(hou.attribType, attr['type']),
             attr['name'],
             default_value=attr['default'])
 
-    for point in rpc.iter_points():
+    for point in points:
         p = geo.createPoint()
         p.setPosition(hou.Vector3((point['x'], point['y'], point['z'])))
         for k, v in point['attrs'].items():
             p.setAttribValue(k, v)
-
-
-def rpc_build(node):
-    """
-    Called from the houdini python node to build the geometry.
-
-    Parameters
-    ----------
-    node : hou.Node
-    """
-    name = node.parent().name()
-
-    _logger.debug('RPC build called for {!r}...'.format(name))
-
-    with hyview.rpc.tmp_client() as c:
-        assert name == c.name()
-        build(node.geometry(), c)
-
-
-def rpc_complete(node):
-    """
-    Called from the houdini python node to signal the cook is complete.
-
-    Parameters
-    ----------
-    node : hou.Node
-    """
-    name = node.parent().name()
-
-    _logger.debug('RPC complete called for {!r}...'.format(name))
-
-    with hyview.rpc.tmp_client() as c:
-        assert name == c.name()
-        c.complete()
-
-    node.parm('python').set('')
-
-
-def _run():
-    s = hyview.rpc.app_server(ApplicationController())
-    _logger.debug('Starting hyview controller')
-    s.run()
-
-
-_thread = None
-
-
-def start():
-    """
-    Start the hyview server thread. This is the method called within houdini
-    to start the rpc server and interface for Houdini.
-    """
-    import threading
-
-    global _thread
-
-    if _thread is not None:
-        raise RuntimeError('Controller thread already started')
-
-    _thread = threading.Thread(target=_run)
-    _thread.daemon = True
-    _thread.start()

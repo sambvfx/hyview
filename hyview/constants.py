@@ -2,9 +2,9 @@ import os
 import logging
 
 
-SERVER_HOST = os.environ.get('HYVIEW_HOST', '127.0.0.1')
-SERVER_PORT = os.environ.get('HYVIEW_SERVER_PORT', '4241')
-BUILD_PORT = os.environ.get('HYVIEW_BUILD_PORT', '4242')
+HOST = os.environ.get('HYVIEW_HOST', '127.0.0.1')
+PORT = os.environ.get('HYVIEW_PORT', '4242')
+APP_PORT = os.environ.get('HYVIEW_APP_PORT', '4241')
 
 CACHE_DIR = os.environ.get('HYVIEW_CACHE_DIR', '/tmp/hyview')
 
