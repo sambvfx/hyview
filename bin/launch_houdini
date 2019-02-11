@@ -1,0 +1,30 @@
+#! /bin/sh
+
+# base env stuff
+
+BINDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+ROOT=$(dirname "$BINDIR")
+
+VENV=$ROOT/venv/lib/python2.7/site-packages
+
+if [ ! -d "$VENV" ]; then
+    echo "Create a python2 virtual env"
+fi
+
+export PATH=$BINDIR:$PATH
+export PYTHONPATH=$ROOT:$VENV:$PYTHONPATH
+
+
+# launch app
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    # Linux
+    echo "NOT IMPLEMENTED"
+    return
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    # Mac OSX
+    "${HOUDINI_APP:-/Applications/Houdini/Houdini17.0.416/Houdini Apprentice 17.0.416.app/Contents/MacOS/happrentice}"
+else
+    # Unknown.
+    echo "NOT IMPLEMENTED"
+fi
