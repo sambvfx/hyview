@@ -18,14 +18,20 @@ export PYTHONPATH=$ROOT:$VENV:$PYTHONPATH
 
 # launch app
 
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    # Linux
-    echo "NOT IMPLEMENTED"
-    return
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    # Mac OSX
-    "${HOUDINI_APP:-/Applications/Houdini/Houdini17.0.416/Houdini Apprentice 17.0.416.app/Contents/MacOS/happrentice}"
+if [[ -z "${HOUDINI_CMD}" ]]; then
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        # Linux
+        cd /opt/sidefx/houdini/houdini17.0.459
+        source /opt/sidefx/houdini/houdini17.0.459/houdini_setup
+        /opt/sidefx/houdini/houdini17.0.459/bin/houdini
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        # Mac OSX
+        "/Applications/Houdini/Houdini17.0.416/Houdini Apprentice 17.0.416.app/Contents/MacOS/happrentice"
+    else
+        # Unknown.
+        echo "NOT IMPLEMENTED"
+        exit 1
+    fi
 else
-    # Unknown.
-    echo "NOT IMPLEMENTED"
+  "$HOUDINI_CMD"
 fi

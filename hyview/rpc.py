@@ -136,7 +136,7 @@ def send(obj, name=None):
     rpc = RPCGeo(obj, name=name)
     name = rpc.name()
 
-    _logger.debug('Starting build {!r}...'.format(name))
+    _logger.debug('Starting build {!r}'.format(name))
 
     s = tmp_server(rpc)
     thread = gevent.spawn(s.run)
