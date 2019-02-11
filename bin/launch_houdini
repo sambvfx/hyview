@@ -8,7 +8,8 @@ ROOT=$(dirname "$BINDIR")
 VENV=$ROOT/venv/lib/python2.7/site-packages
 
 if [ ! -d "$VENV" ]; then
-    echo "Create a python2 virtual env"
+    echo "You must create a python2 virtualenv. See ./buildenv"
+    exit 1
 fi
 
 export PATH=$BINDIR:$PATH
