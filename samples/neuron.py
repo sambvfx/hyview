@@ -122,7 +122,8 @@ def build_interesting(minimum=2000000):
         images, labels,
         by_label=True,
         colorize=True,
-        filters=list(iter_unique_by_count(labels, minimum=minimum)),
+        filters=list(samples.utils.iter_unique_by_count(
+            labels, minimum=minimum)),
         size=0, znth=0, nth=8, zmult=10)
 
     app = hyview.app()
