@@ -1,143 +1,155 @@
-
-import os
+"""
+The plumbing of hyview to talk between processess.
+"""
 import string
-
 import six
+import attr
 
 import zerorpc
+import gevent
+from gevent.event import Event
 
-from hyview.utils import serialize
 from hyview.c4 import C4
+from hyview.constants import SERVER_HOST, SERVER_PORT, BUILD_PORT, LOGGING_LEVEL
+
+import logging
+
+from typing import *
 
 
-def client(host=None, port=None):
-    if host is None:
-        host = os.environ.get('HYVIEW_CLIENT_HOST', '127.0.0.1')
-    if port is None:
-        port = os.environ.get('HYVIEW_CLIENT_PORT', '4242')
+T = TypeVar('T')
 
-    c = zerorpc.Client()
-    c.connect('tcp://{}:{}'.format(host, port))
 
+logging.basicConfig()
+_logger = logging.getLogger(__name__)
+_logger.setLevel(LOGGING_LEVEL)
+
+
+class Client(zerorpc.Client):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+
+def client(url):
+    c = Client()
+    c.connect(url)
     return c
 
 
-def controller_client(host=None, port=None):
-    if host is None:
-        host = os.environ.get('HYVIEW_CLIENT_HOST', '127.0.0.1')
-    if port is None:
-        port = os.environ.get('HYVIEW_CONTROLLER_PORT', '4241')
-
-    c = zerorpc.Client()
-    c.connect('tcp://{}:{}'.format(host, port))
-
-    return c
-
-
-def _run(url):
-    from hyview.houdini.hy import Controller
-
-    s = zerorpc.Server(Controller())
-    print('Starting hyview controller @ {!r}'.format(url))
+def server(obj, url):
+    s = zerorpc.Server(obj)
     s.bind(url)
-    s.run()
+    return s
 
 
-_thread = None
+def app_client():
+    return client('tcp://{}:{}'.format(SERVER_HOST, SERVER_PORT))
 
 
-def start_controller(host=None, port=None):
-    import threading
+def app_server(obj):
+    return server(obj, 'tcp://{}:{}'.format(SERVER_HOST, SERVER_PORT))
 
-    global _thread
 
-    if _thread is not None:
-        raise RuntimeError('Controller thread already started')
+def tmp_client():
+    return client('tcp://{}:{}'.format(SERVER_HOST, BUILD_PORT))
 
-    if host is None:
-        host = os.environ.get('HYVIEW_CONTROLLER_HOST', '127.0.0.1')
-    if port is None:
-        port = os.environ.get('HYVIEW_CONTROLLER_PORT', '4241')
 
-    url = 'tcp://{}:{}'.format(host, port)
-
-    _thread = threading.Thread(target=_run, args=(url,))
-    _thread.daemon = True
-    _thread.start()
+def tmp_server(obj):
+    return server(obj, 'tcp://{}:{}'.format(SERVER_HOST, BUILD_PORT))
 
 
 class RPCGeo(object):
+    """
+    Wrapper object of a `hyview.interface.Geometry` object. This is the object
+    hosted as a zerorpc server and interfaced from the client in Houdini.
+
+    There should only be one of these active at any given time.
+    """
     def __init__(self, geometry, name=None):
-        self.geometry = geometry
+        self._geometry = geometry
         if name is not None:
+            # We want valid names for houdini.
             assert isinstance(name, six.string_types)
             assert name[0] in string.ascii_letters
+        elif name is None:
+            name = str(C4(self._geometry))
         self._name = name
-        self._server = None
-
-    def build(self, host=None, port=None):
-        s = zerorpc.Server(self)
-        self._server = s
-
-        if host is None:
-            host = os.environ.get('HYVIEW_SERVER_HOST', '127.0.0.1')
-        if port is None:
-            port = os.environ.get('HYVIEW_SERVER_PORT', '4242')
-
-        url = 'tcp://{}:{}'.format(host, port)
-
-        s.bind(url)
-
-        c = controller_client()
-        c.create(self.name())
-
-        s.run()
+        self.is_done = Event()
 
     def name(self):
-        return self._name or str(C4(self.geometry))
+        """
+        Get the geometry's unique identifier.
+
+        Returns
+        -------
+        str
+        """
+        return self._name
 
     def complete(self):
-        print('complete')
-        self._server.stop()
-        self._server.close()
+        """
+        Mark the object build as being complete.
+        """
+        self.is_done.set()
 
     @zerorpc.stream
     def iter_attributes(self):
-        print('iter_attributes')
-        for attr in self.geometry.attributes:
-            yield serialize(attr)
+        """
+        Yield all custom attributes of the geometry.
+
+        Returns
+        -------
+        Iterator[Dict[str, Any]]
+        """
+        for x in self._geometry.attributes:
+            yield attr.asdict(x)
 
     @zerorpc.stream
     def iter_points(self):
-        print('iter_points')
-        for prim in self.geometry.primitives:
+        """
+        Yield all the points of the geometry.
+
+        Returns
+        -------
+        Iterator[Dict[str, Any]]
+        """
+        for prim in self._geometry.primitives:
             for point in prim.points:
-                yield serialize(point)
+                yield attr.asdict(point)
 
 
 def send(obj, name=None):
-    rpc = RPCGeo(obj, name=name)
-    print('Starting build {!r}...'.format(rpc.name()))
-    rpc.build()
-    print('Done building {!r}'.format(obj))
-
-
-def rpc_build(name, geo):
     """
-    Called from the houdini python nodes.
+    Send a geometry object to be built.
 
     Parameters
     ----------
-    name : str
-    geo : hou.Geometry
+    obj : hyview.interface.Geometry
+    name : Optional[str]
+        Used for uniqueness. Depending on how we deal with caching, this may
+        result in using an existing cached file if one exists with this name.
+        If not proivded, we generated a C4 hash of `obj` and use that.
     """
-    from hyview.houdini.hy import build
+    rpc = RPCGeo(obj, name=name)
+    name = rpc.name()
 
-    print('RPC build called for {!r}...'.format(name))
+    _logger.debug('Starting build {!r}...'.format(name))
 
-    c = client()
-    assert name == c.name()
-    build(geo, c)
-    # shuts down the server
-    del c
-    c.complete()
+    s = tmp_server(rpc)
+    thread = gevent.spawn(s.run)
+
+    c = client('tcp://{}:{}'.format(SERVER_HOST, SERVER_PORT))
+    c.create(name)
+
+    rpc.is_done.wait()
+
+    c.complete(name)
+
+    c.close()
+    s.close()
+    thread.join()
+
+    _logger.debug('Done building {!r}'.format(obj))

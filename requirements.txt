@@ -1,5 +1,7 @@
 attrs
 h5py
 zerorpc
+gevent
 kids.cache
 typing
+six

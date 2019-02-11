@@ -184,6 +184,8 @@ class C4(object):
         return '<{}({!r})>'.format(self.__class__.__name__, str(self))
 
     def __eq__(self, other):
+        if not isinstance(other, C4):
+            return False
         return str(self) == str(other)
 
     def update(self, *objects):
@@ -223,6 +225,17 @@ def _claim_filepath(obj):
 
 @C4.register(_claim_filepath)
 def hash_filepath(obj):
+    """
+    Yield bytes from the contents of a filepath.
+
+    Parameters
+    ----------
+    obj : six.string_types
+
+    Returns
+    -------
+    Iterator[bytes]
+    """
     with open(obj, 'r') as f:
         block_size = 100 * (2 ** 20)
         cnt_blocks = 0

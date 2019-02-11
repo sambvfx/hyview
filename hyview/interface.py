@@ -1,3 +1,6 @@
+"""
+Abstract representations of Houdini objects.
+"""
 import attr
 from attr.validators import in_ as choices
 
