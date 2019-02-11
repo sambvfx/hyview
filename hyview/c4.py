@@ -17,6 +17,10 @@ from kids.cache import hashing
 from typing import *
 
 
+# Type to represent a filepath: (str, pathlib.Path)
+PathT = TypeVar('PathT')
+
+
 # Used to indentify filepaths where C4 will hash the contents of the filepath
 # as part of it's id generation.
 PATH_TYPES = [six.string_types]
@@ -210,15 +214,48 @@ class C4(object):
 
 
 def _claim_c4(obj):
+    """
+    Claim method for C4 objects.
+
+    Parameters
+    ----------
+    obj : Any
+
+    Returns
+    -------
+    bool
+    """
     return isinstance(obj, C4)
 
 
 @C4.register(_claim_c4)
 def hash_c4(obj):
+    """
+    Hash a C4 object.
+
+    Parameters
+    ----------
+    obj : C4
+
+    Returns
+    -------
+    bytes
+    """
     return to_bytes(str(obj))
 
 
 def _claim_filepath(obj):
+    """
+    Claim method for filepath objects.
+
+    Parameters
+    ----------
+    obj : Any
+
+    Returns
+    -------
+    bool
+    """
     return isinstance(obj, tuple(PATH_TYPES)) and os.sep in str(obj) and \
            os.path.exists(obj)
 
@@ -230,7 +267,7 @@ def hash_filepath(obj):
 
     Parameters
     ----------
-    obj : six.string_types
+    obj : PathT
 
     Returns
     -------
