@@ -20,7 +20,7 @@ _logger.setLevel(LOGGING_LEVEL)
 
 class BatchUpdate(object):
     """
-    Context manager for blocking any cooking
+    Context manager for blocking any cooking.
     """
     def __init__(self):
         self._current = hou.updateModeSetting()
@@ -179,6 +179,10 @@ _thread = None
 
 
 def start():
+    """
+    Start the hyview server thread. This is the method called within houdini
+    to start the rpc server and interface for Houdini.
+    """
     import threading
 
     global _thread
