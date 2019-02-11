@@ -54,7 +54,7 @@ def neuron_sample(filters=None, size=None, znth=None, nth=None, zmult=10):
     hyview.rpc.send(geo)
 
 
-def random_point_gen(size=None):
+def _random_point_gen(size=None):
     i = 0
     while size is None or i < size:
         c = random.randint(0, 255)
@@ -75,7 +75,7 @@ def random_point_gen(size=None):
 def random_data(size=200):
 
     primitive = hyview.interface.Primitive(
-        points=list(random_point_gen(size=size)))
+        points=list(_random_point_gen(size=size)))
 
     attributes = [
         hyview.interface.AttributeDefinition(

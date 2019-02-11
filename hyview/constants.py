@@ -8,5 +8,16 @@ BUILD_PORT = os.environ.get('HYVIEW_BUILD_PORT', '4242')
 
 CACHE_DIR = os.environ.get('HYVIEW_CACHE_DIR', '/tmp/hyview')
 
-LOGGING_LEVEL = logging._nameToLevel.get(
+_LOGGING_LOOKUP = {
+    'CRITICAL': logging.CRITICAL,
+    'FATAL': logging.FATAL,
+    'ERROR': logging.ERROR,
+    'WARN': logging.WARNING,
+    'WARNING': logging.WARNING,
+    'INFO': logging.INFO,
+    'DEBUG': logging.DEBUG,
+    'NOTSET': logging.NOTSET,
+}
+
+LOGGING_LEVEL = _LOGGING_LOOKUP.get(
     os.environ.get('HYVIEW_LOGGING_LEVEL', 'DEBUG'), logging.DEBUG)

@@ -152,4 +152,4 @@ def send(obj, name=None):
     s.close()
     thread.join()
 
-    _logger.debug('Done building {!r}'.format(obj))
+    _logger.debug('Done building {!r}'.format(name))

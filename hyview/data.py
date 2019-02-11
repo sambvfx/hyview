@@ -5,6 +5,23 @@ import itertools
 
 
 def iterfilter(images, labels, size=None, znth=None, nth=None, zmult=10):
+    """
+    Helper to iterate and filter over dataset.
+
+    Parameters
+    ----------
+    images : numpy.array
+    labels : numpy.array
+    size : Optional[int]
+    znth : Optional[int]
+    nth : Optionl[int]
+    zmult : int
+        Scale multiplier for z coordinate.
+
+    Returns
+    -------
+    Iterator[Tuple[int, int, int, int, int]]
+    """
     if size:
         images = images[:size]
         labels = labels[:size]
