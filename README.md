@@ -109,7 +109,7 @@ Or set them as environment variables before you launch.
 export HYVIEW_PLUGIN_PATH=/path/to/mymodule.py:/path/to/manypluginsdir
 ```
 
-With this set, you can call this procedure remotely like this:
+You can then call this procedure like you would normally - which will issue the RPC command to execute it remotely.
 
 ```python
 import mymodule

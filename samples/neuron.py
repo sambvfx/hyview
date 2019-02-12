@@ -10,6 +10,12 @@ import hyview
 import samples.utils
 
 
+TEST_H5PY_SAMPLE_PATH = os.path.join(
+    os.path.dirname(__file__),
+    '_data',
+    'sample_A_20160501.hdf')
+
+
 @hyview.rpc()
 def mesh_all(names=None):
     """
@@ -31,14 +37,30 @@ def mesh_all(names=None):
         p.setDisplayFlag(True)
 
 
-TEST_H5PY_SAMPLE_PATH = os.path.join(
-    os.path.dirname(__file__),
-    '_data',
-    'sample_A_20160501.hdf')
-
-
 def neuron_sample(images, labels, by_label=False, colorize=False,
                   filters=None, size=None, znth=None, nth=None, zmult=10):
+    """
+    Helper to visualize the neuron dataset.
+
+    Parameters
+    ----------
+    images : numpy.array
+    labels : numpy.array
+    by_label : bool
+        Whether geo is grouped by label or a single geometry for everything.
+    colorize : bool
+        Colorize the data per-label.
+    filters : Optional[List[int]]
+        Filters the data to only those that have labels within this list.
+    size : Optional[int]
+        Specify the number of z slices.
+    znth : Optional[int]
+        Specify how many of each z slice to use.
+    nth : Optional[int]
+        Filters the points to every `nth`.
+    zmult : int
+        Scale multiplier for z.
+    """
     from hyview.c4 import C4
     from samples.utils import ColorGenerator
 
@@ -94,24 +116,32 @@ def neuron_sample(images, labels, by_label=False, colorize=False,
 
 
 def neuron_sample_from_h5py(path, **kwargs):
+    """
+    Visualize a neuron dataset from a h5py file.
+
+    Parameters
+    ----------
+    path : str
+    kwargs : **Any
+        See `neuron_sample`.
+    """
     images, labels = samples.utils.load_data_from_h5py(
         path, 'volumes/raw', 'volumes/labels/neuron_ids')
 
     neuron_sample(images, labels, **kwargs)
 
 
-def mesh():
-    # Generate some data
-    neuron_sample_from_h5py(
-        TEST_H5PY_SAMPLE_PATH, by_label=True,
-        colorize=True,
-        filters=[4944, 20474],
-        size=0, znth=0, nth=5, zmult=10)
+def build_interesting(minimum=2000000, mesh=True):
+    """
+    Visualize interesting data structures within the neuron dataset.
 
-    mesh_all()
-
-
-def build_interesting(minimum=2000000):
+    Parameters
+    ----------
+    minimum : int
+        Filter to labels that have point counts over this number.
+    mesh : bool
+        Mesh the points.
+    """
     images, labels = samples.utils.load_data_from_h5py(
         TEST_H5PY_SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
 
@@ -123,4 +153,5 @@ def build_interesting(minimum=2000000):
             labels, minimum=minimum)),
         size=0, znth=0, nth=8, zmult=10)
 
-    mesh_all()
+    if mesh:
+        mesh_all()
