@@ -1,110 +1,42 @@
 """
-hyview Houdini module. This is the module imported and used within Houdini.
-
-# TODO: Manage cache files?
+Remote procedures to run in Houdini.
 """
 import os
-
-import hou
-
-from hyview.constants import CACHE_DIR
-import hyview.log
+from hyview.constants import CACHE_DIR, HOST, PORT
+import hyview
 
 
-_logger = hyview.log.get(__name__)
+_logger = hyview.getLogger(__name__)
 
 
-class BatchUpdate(object):
+@hyview.rpc()
+def all_nodes():
+    from hyview.hy.core import root
+    return [x.name() for x in root().children()]
+
+
+@hyview.rpc()
+def clear():
+    from hyview.hy.core import root
+    for node in root().children():
+        node.destroy()
+
+
+@hyview.rpc()
+def sync_complete(name):
     """
-    Context manager for blocking any cooking.
+    Called after a geometry sync is completed. This removes the python nodes
+    responsible for syncing the data and will use what's on disk.
+
+    Parameters
+    ----------
+    name : str
     """
-    def __init__(self):
-        self._current = hou.updateModeSetting()
-
-    def __enter__(self):
-        hou.setUpdateMode(hou.updateMode.Manual)
-        hou.updateModeSetting()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        hou.setUpdateMode(self._current)
-        hou.updateModeSetting()
-
-
-def reformat(s):
-    return '\n'.join(x.strip() for x in s.strip().split('\n'))
-
-
-class HoudiniApplicationController(object):
-    def __init__(self, parent=None, cachedir=CACHE_DIR):
-        if parent is None:
-            parent = hou.node('/obj/hyview')
-            if parent:
-                parent.destroy()
-            parent = hou.node('/obj').createNode('subnet', 'hyview')
-            parent.moveToGoodPosition()
-        self.parent = parent
-
-        self.cachedir = cachedir
-
-    @property
-    def nodes(self):
-        return {n.name(): n for n in self.parent.children()}
-
-    def names(self):
-        return self.nodes.keys()
-
-    def clear(self):
-        for node in self.parent.children():
-            node.destroy()
-
-    def complete(self, name):
-        node = self.nodes.get(name)
-        for child in node.children():
-            if child.type().name() == 'python':
-                child.destroy()
-
-    def create(self, name, cache=True):
-        if name in self.nodes:
-            raise ValueError('{!r} already exists'.format(name))
-
-        cache_path = os.path.join(self.cachedir, '{}.bgeo'.format(name))
-
-        use_cache = False
-        if os.path.exists(cache_path):
-            if not cache:
-                os.remove(cache_path)
-            else:
-                use_cache = True
-
-        with BatchUpdate():
-
-            geo = self.parent.createNode('geo', node_name=name)
-            geo.moveToGoodPosition()
-
-            fnode = geo.createNode('file')
-            fnode.parm('file').set(cache_path)
-            fnode.parm('filemode').set(0)
-
-            signal_node = geo.createNode('python')
-            signal_node.moveToGoodPosition()
-            signal_node.setInput(0, fnode)
-            signal_node.parm('python').set(reformat('''
-                import hyview.hy.transport
-                hyview.hy.transport.complete(hou.pwd())
-            '''))
-            signal_node.setDisplayFlag(True)
-
-            if not use_cache:
-                python_in = geo.createNode('python')
-                python_in.parm('python').set(reformat('''
-                    import hyview.hy.transport
-                    hyview.hy.transport.build(hou.pwd())
-                '''))
-                python_in.moveToGoodPosition()
-                fnode.setInput(0, python_in)
-
-            fnode.moveToGoodPosition()
-            signal_node.moveToGoodPosition()
+    from hyview.hy.core import get_node
+    node = get_node(name)
+    for child in node.children():
+        if child.type().name() == 'python':
+            child.destroy()
 
 
 def build(geo, attrs, points):
@@ -117,6 +49,7 @@ def build(geo, attrs, points):
     attrs : Iterable[Union[hyview.interface.AttributeDefinition, Dict[str, Any]]]
     points : Iterable[Union[hyview.interface.Point, Dict[str, Any]]]
     """
+    import hou
     for attr in attrs:
         geo.addAttrib(
             getattr(hou.attribType, attr['type']),
@@ -128,3 +61,106 @@ def build(geo, attrs, points):
         p.setPosition(hou.Vector3((point['x'], point['y'], point['z'])))
         for k, v in point['attrs'].items():
             p.setAttribValue(k, v)
+
+
+def stream(node):
+    """
+    Called from the houdini python node to build the geometry.
+
+    Parameters
+    ----------
+    node : hou.Node
+    """
+    import hyview.transport
+
+    name = node.parent().name()
+
+    _logger.debug('RPC build called for {!r}...'.format(name))
+
+    client = hyview.transport.Client()
+    client.connect('tcp://{}:{}'.format(HOST, PORT))
+
+    with client as c:
+        build(node.geometry(), c.iter_attributes(), c.iter_points())
+
+
+def cook_complete(node):
+    """
+    Called from the houdini python node to signal the cook is complete.
+
+    Parameters
+    ----------
+    node : hou.Node
+    """
+    import hyview.transport
+
+    name = node.parent().name()
+
+    _logger.debug('RPC complete called for {!r}...'.format(name))
+
+    client = hyview.transport.Client()
+    client.connect('tcp://{}:{}'.format(HOST, PORT))
+
+    with client as c:
+        c.complete()
+
+    node.parm('python').set('')
+
+
+@hyview.rpc()
+def create(name, cache=True):
+    """
+    Create a new geometry.
+
+    This creates some python nodes that will connect up to a rpc server and
+    stream attributes and points to be created.
+
+    Parameters
+    ----------
+    name : str
+    cache : bool
+        Use existing cached files with `name` identifier if it exists.
+    """
+    from hyview.hy.core import root, BatchUpdate, reformat_python
+
+    if name in [x.name() for x in root().children()]:
+        raise ValueError('{!r} already exists'.format(name))
+
+    cache_path = os.path.join(CACHE_DIR, '{}.bgeo'.format(name))
+
+    use_cache = False
+    if os.path.exists(cache_path):
+        if not cache:
+            os.remove(cache_path)
+        else:
+            use_cache = True
+
+    with BatchUpdate():
+
+        geo = root().createNode('geo', node_name=name)
+        geo.moveToGoodPosition()
+
+        fnode = geo.createNode('file')
+        fnode.parm('file').set(cache_path)
+        fnode.parm('filemode').set(0)
+
+        signal_node = geo.createNode('python')
+        signal_node.moveToGoodPosition()
+        signal_node.setInput(0, fnode)
+        signal_node.parm('python').set(reformat_python('''
+            import hyview.hy.implementation
+            hyview.hy.implementation.cook_complete(hou.pwd())
+        '''))
+        signal_node.setDisplayFlag(True)
+
+        if not use_cache:
+            python_in = geo.createNode('python')
+            python_in.parm('python').set(reformat_python('''
+                import hyview.hy.implementation
+                hyview.hy.implementation.stream(hou.pwd())
+            '''))
+            python_in.moveToGoodPosition()
+            fnode.setInput(0, python_in)
+
+        fnode.moveToGoodPosition()
+        signal_node.moveToGoodPosition()

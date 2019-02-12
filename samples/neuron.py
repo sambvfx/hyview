@@ -11,17 +11,17 @@ import samples.utils
 
 
 @hyview.rpc()
-def mesh_all(self, names=None):
+def mesh_all(names=None):
     """
     RPC method for "meshing" all geometry.
 
     Parameters
     ----------
-    self : hyview.hy.implementation.HoudiniApplicationController
     names : Optional[str]
     """
-    for name, node in self.nodes.items():
-        if names and name not in names:
+    import hyview.hy.core
+    for node in hyview.hy.core.root().children():
+        if names and node.name() not in names:
             continue
         last = node.children()[-1]
         p = node.createNode('particlefluidsurface')
@@ -32,7 +32,7 @@ def mesh_all(self, names=None):
 
 
 TEST_H5PY_SAMPLE_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)),
+    os.path.dirname(__file__),
     '_data',
     'sample_A_20160501.hdf')
 
@@ -41,8 +41,6 @@ def neuron_sample(images, labels, by_label=False, colorize=False,
                   filters=None, size=None, znth=None, nth=None, zmult=10):
     from hyview.c4 import C4
     from samples.utils import ColorGenerator
-
-    app = hyview.app()
 
     colors = ColorGenerator()
 
@@ -89,10 +87,10 @@ def neuron_sample(images, labels, by_label=False, colorize=False,
             attributes=attributes, primitives=[primitive])
 
         if by_label:
-            app.build(geo, name='label-{}-{}'.format(
+            hyview.build(geo, name='label-{}-{}'.format(
                 k, C4(filters, size, znth, nth, zmult)))
         else:
-            app.build(geo)
+            hyview.build(geo)
 
 
 def neuron_sample_from_h5py(path, **kwargs):
@@ -110,8 +108,7 @@ def mesh():
         filters=[4944, 20474],
         size=0, znth=0, nth=5, zmult=10)
 
-    app = hyview.app()
-    app.mesh_all()
+    mesh_all()
 
 
 def build_interesting(minimum=2000000):
@@ -126,5 +123,4 @@ def build_interesting(minimum=2000000):
             labels, minimum=minimum)),
         size=0, znth=0, nth=8, zmult=10)
 
-    app = hyview.app()
-    app.mesh_all()
+    mesh_all()

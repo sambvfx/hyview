@@ -8,8 +8,11 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright (c) 2019 Sam Bourne'
 
 
-from hyview.interface import AttributeDefinition, Point, Primitive, Geometry
-from hyview.registry import register as rpc
+from hyview.log import getLogger
 
-from hyview.transport import start, app
-from hyview.hy.transport import start_houdini
+from hyview.plugins import rpc
+
+from hyview.app import app, build
+from hyview.hy.init import start_houdini
+
+from hyview.interface import AttributeDefinition, Point, Primitive, Geometry
