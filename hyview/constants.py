@@ -23,4 +23,4 @@ _LOGGING_LOOKUP = {
 }
 
 LOGGING_LEVEL = _LOGGING_LOOKUP.get(
-    os.environ.get('HYVIEW_LOGGING_LEVEL', 'DEBUG'), logging.DEBUG)
+    os.environ.get('HYVIEW_LOGGING_LEVEL', 'INFO'), logging.INFO)

@@ -7,7 +7,11 @@ import os
 from collections import defaultdict
 
 import hyview
+import hyview.log
 import samples.utils
+
+
+_logger = hyview.log.get_logger(__name__)
 
 
 TEST_H5PY_SAMPLE_PATH = os.path.join(
@@ -203,16 +207,29 @@ def build_interesting(minimum=2000000, mesh=True):
     mesh : bool
         Mesh the points.
     """
+    _logger.info('Loading data from {!r}...'.format(TEST_H5PY_SAMPLE_PATH))
+
     images, labels = samples.utils.load_data_from_h5py(
         TEST_H5PY_SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
 
-    build_neuron_sample(
-        images, labels,
-        group='label',
-        colorize=True,
-        filters=list(samples.utils.iter_unique_by_count(
-            labels, minimum=minimum)),
-        size=0, znth=0, nth=8, zmult=10)
+    _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
+
+    filters = list(samples.utils.iter_unique_by_count(labels, minimum=minimum))
+
+    _logger.info('Filtering data...')
+
+    for name, geo in geogen(
+            images, labels,
+            group='label',
+            colorize=True,
+            filters=filters,
+            size=0, znth=0, nth=8, zmult=10):
+
+        _logger.info('Sending {!r} to Houdini...'.format(name))
+
+        hyview.build(geo, name=name)
+
+    _logger.info('Meshing all geo...')
 
     if mesh:
         mesh_all()
