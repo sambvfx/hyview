@@ -2,21 +2,26 @@ import hou
 
 
 def initialize():
-    root = hou.node('/obj/hyview')
-    if root:
-        root.destroy()
-    root = hou.node('/obj').createNode('subnet', 'hyview')
-    root.moveToGoodPosition()
+    """
+    Initialize the hyview node. Mulitiple calls to this will delete and
+    recreate the root hyview subnet node.
+    """
+    result = hou.node('/obj/hyview')
+    if result:
+        result.destroy()
+    result = hou.node('/obj').createNode('subnet', 'hyview')
+    result.moveToGoodPosition()
 
 
 def root():
+    """
+    Get the root hyview node.
+
+    Returns
+    -------
+    hou.Node
+    """
     return hou.node('/obj/hyview')
-
-
-def get_node(name):
-    for child in root().children():
-        if child.name() == name:
-            return child
 
 
 class BatchUpdate(object):

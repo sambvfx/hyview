@@ -11,7 +11,7 @@ import hyview
 from typing import *
 
 
-_logger = hyview.getLogger(__name__)
+_logger = hyview.get_logger(__name__)
 
 
 ModuleType = type(sys)

@@ -8,7 +8,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright (c) 2019 Sam Bourne'
 
 
-from hyview.log import getLogger
+from hyview.log import get_logger
 
 from hyview.plugins import rpc
 

@@ -40,7 +40,7 @@ class Point(object):
 @attr.s
 class Primitive(object):
     points = attr.ib(
-        type=List[Point],
+        type=Iterable[Point],
         default=attr.Factory(list),
         repr=False)
     attrs = attr.ib(
@@ -51,10 +51,10 @@ class Primitive(object):
 @attr.s
 class Geometry(object):
     attributes = attr.ib(
-        type=List[AttributeDefinition],
+        type=Iterable[AttributeDefinition],
         default=attr.Factory(list),
         repr=False)
     primitives = attr.ib(
-        type=List[Primitive],
+        type=Iterable[Primitive],
         default=attr.Factory(list),
         repr=False)

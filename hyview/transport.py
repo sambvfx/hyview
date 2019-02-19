@@ -3,6 +3,10 @@ import zerorpc
 
 
 class Client(zerorpc.Client):
+    """
+    Slightly extended version of the `zerorpc.Client` that allows use as
+    context manager.
+    """
     def __enter__(self):
         return self
 
@@ -11,6 +15,11 @@ class Client(zerorpc.Client):
 
 
 class Server(zerorpc.Server):
+    """
+    Slightly extended version of the `zerorpc.Server` that fixes some issues
+    with ipython tab completion (over rpc) and promotes methods with the
+    appropriate zerorpc decorators.
+    """
     def __init__(self, methods=None, name=None, context=None, pool_size=None,
                  heartbeat=5):
 
@@ -19,6 +28,7 @@ class Server(zerorpc.Server):
         _methods['trait_names'] = lambda: _methods.keys()
         _methods['_getAttributeNames'] = lambda: _methods.keys()
 
+        # I wonder way base zerorpc implementation didn't do this?
         methods = {}
         for (k, f) in _methods.items():
             if inspect.isgeneratorfunction(f):

@@ -3,12 +3,11 @@ Startup for the Houdini RPC server.
 """
 import os
 import hyview.transport
-import hyview.hy.implementation
 import hyview.plugins
 from hyview.constants import HOST, APP_PORT
 
 
-_logger = hyview.getLogger(__name__)
+_logger = hyview.get_logger(__name__)
 
 
 def _run(plugin_paths=None):

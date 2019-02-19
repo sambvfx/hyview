@@ -6,7 +6,7 @@ from hyview.constants import CACHE_DIR, HOST, PORT
 import hyview
 
 
-_logger = hyview.getLogger(__name__)
+_logger = hyview.get_logger(__name__)
 
 
 @hyview.rpc()
@@ -32,11 +32,13 @@ def sync_complete(name):
     ----------
     name : str
     """
-    from hyview.hy.core import get_node
-    node = get_node(name)
-    for child in node.children():
-        if child.type().name() == 'python':
-            child.destroy()
+    import hyview.hy.core
+
+    for node in hyview.hy.core.root().children():
+        if node.name() == name:
+            for child in node.children():
+                if child.type().name() == 'python':
+                    child.destroy()
 
 
 def build(geo, attrs, points):
@@ -46,16 +48,19 @@ def build(geo, attrs, points):
     Parameters
     ----------
     geo : hou.Geometry
-    attrs : Iterable[Union[hyview.interface.AttributeDefinition, Dict[str, Any]]]
-    points : Iterable[Union[hyview.interface.Point, Dict[str, Any]]]
+    attrs : Iterable[Dict[str, Any]]
+    points : Iterable[Dict[str, Any]]
     """
     import hou
+
+    # First build the attributes.
     for attr in attrs:
         geo.addAttrib(
             getattr(hou.attribType, attr['type']),
             attr['name'],
             default_value=attr['default'])
 
+    # Then build the points.
     for point in points:
         p = geo.createPoint()
         p.setPosition(hou.Vector3((point['x'], point['y'], point['z'])))
@@ -65,7 +70,7 @@ def build(geo, attrs, points):
 
 def stream(node):
     """
-    Called from the houdini python node to build the geometry.
+    Called from the Houdini python node to build the geometry.
 
     Parameters
     ----------

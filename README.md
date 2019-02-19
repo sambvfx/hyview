@@ -89,6 +89,9 @@ def mesh_all(names=None):
         if names and node.name() not in names:
             continue
         last = node.children()[-1]
+        if 'particlefluidsurface' in last.type().name():
+            # already meshed
+            continue
         p = node.createNode('particlefluidsurface')
         p.parm('particlesep').set(8)
         p.parm('transferattribs').set('Cd')
