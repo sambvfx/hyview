@@ -1,5 +1,8 @@
 ## Install Houdini
-Download Houdini. The Apprentice version is free and works just fine!:
+This library uses Houdini to visualize data. The apprentice version is available for free and comes with limited restrictions:
+
+> Houdini Apprentice is a free version of Houdini FX which can be used by students, artists and hobbyists to create personal non-commercial projects. 
+
 https://www.sidefx.com/products/houdini-apprentice/
 
 ## Build
@@ -24,8 +27,7 @@ virtualenv -p python3 venv3
 
 Start Houdini from the launcher. You may have to update the launcher to point at your Houdini install location.
 
-> TIP: You can set the environment variable `HOUDINI_CMD` to specify your own 
-application launcher.
+> TIP: You can set the environment variable `HOUDINI_CMD` to override the default the path to the houdini executable.
 
 ```bash
 bin/launch_houdini
@@ -56,7 +58,7 @@ samples.rand.random_data()
 
 - Simple interface
   - Abstract representations of houdini data types. `hyview.Geometry`, `hyview.Primitive` and `hyview.Point`
-  - Build point cloud by simply passing a `hyview.Geometry` object to `hyview.build`
+  - Build a point cloud by simply passing a `hyview.Geometry` object to `hyview.build`
   - Support for passing custom Houdini attributes. See `hyview.AttributeDefinition`.
 - Aggressive and safe caching
   - By default results are cached to disk immediately for performace. Providing the same data twice will use the disk cache if one exists.
@@ -121,15 +123,21 @@ Note you'll need to scope all Houdini specific imports.
 ## Neuron Sample
 
 Download sample data from https://cremi.org/static/data/sample_A_20160501.hdf
-Place file in `./samples/_data`
+
+Place the sample file in `./samples/_data`
 
 > NOTE: You'll have to `pip install h5py` to load the data.
 
 When starting Houdini server, include the `samples/neuron.py` path to ensure it registers the `mesh_all` rpc method.
 
 ```python
+import os
+import inspect
 import hyview
-hyview.start_houdini('~/projects/hyview/samples/neuron.py')
+hyview.start_houdini(os.path.join(
+    os.path.dirname(os.path.dirname(inspect.getabsfile(hyview))),
+    'samples',
+    'neuron.py'))
 ```
 
 Generate some sample data.
