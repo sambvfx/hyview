@@ -23,20 +23,24 @@ TEST_H5PY_SAMPLE_PATH = os.path.join(
 @hyview.rpc()
 def mesh_all(names=None):
     """
-    RPC method for "meshing" all geometry.
+    Create a particle fliud mesh for all geo within the hyview root subnet.
 
     Parameters
     ----------
     names : Optional[str]
     """
     import hyview.hy.core
+
     for node in hyview.hy.core.root().children():
         if names and node.name() not in names:
             continue
+
         last = node.children()[-1]
+
         if 'particlefluidsurface' in last.type().name():
             # already meshed
             continue
+
         p = node.createNode('particlefluidsurface')
         p.parm('particlesep').set(8)
         p.parm('transferattribs').set('Cd')
@@ -208,16 +212,13 @@ def build_interesting(minimum=2000000, mesh=True):
         Mesh the points.
     """
     _logger.info('Loading data from {!r}...'.format(TEST_H5PY_SAMPLE_PATH))
-
     images, labels = samples.utils.load_data_from_h5py(
         TEST_H5PY_SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
 
     _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
-
     filters = list(samples.utils.iter_unique_by_count(labels, minimum=minimum))
 
     _logger.info('Filtering data...')
-
     for name, geo in geogen(
             images, labels,
             group='label',
@@ -226,10 +227,8 @@ def build_interesting(minimum=2000000, mesh=True):
             size=0, znth=0, nth=8, zmult=10):
 
         _logger.info('Sending {!r} to Houdini...'.format(name))
-
         hyview.build(geo, name=name)
 
-    _logger.info('Meshing all geo...')
-
     if mesh:
+        _logger.info('Meshing all geo...')
         mesh_all()

@@ -78,20 +78,24 @@ import hyview
 @hyview.rpc()
 def mesh_all(names=None):
     """
-    RPC method for "meshing" all geometry.
+    Create a particle fliud mesh for all geo within the hyview root subnet.
 
     Parameters
     ----------
     names : Optional[str]
     """
     import hyview.hy.core
+    
     for node in hyview.hy.core.root().children():
         if names and node.name() not in names:
             continue
+            
         last = node.children()[-1]
+        
         if 'particlefluidsurface' in last.type().name():
             # already meshed
             continue
+            
         p = node.createNode('particlefluidsurface')
         p.parm('particlesep').set(8)
         p.parm('transferattribs').set('Cd')

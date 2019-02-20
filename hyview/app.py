@@ -5,7 +5,6 @@ import attr
 
 import gevent
 from gevent.event import Event
-import zerorpc
 
 import hyview.transport
 from hyview.constants import HOST, PORT, APP_PORT
