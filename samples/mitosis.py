@@ -17,6 +17,7 @@ SAMPLE_PATH = os.path.join(
     '_data',
     'mitosis.tif')
 
+# TODO: Confirm this multiplier...
 Z_SCALE = 5.0
 
 
@@ -30,7 +31,22 @@ def load_data():
 
 
 def iterdata(data, size=None, znth=None, nth=None, zmult=Z_SCALE):
+    """
+    Helper to iterate over the dataset.
 
+    Parameters
+    ----------
+    data : numpy.array
+    size : Optional[int]
+    znth : Optional[int]
+    nth : Optionl[int]
+    zmult : int
+        Scale multiplier for z coordinate.
+
+    Returns
+    -------
+    Iterator[Tuple[int, int, int, int, Dict[str, int]]]
+    """
     import itertools
 
     if size:
@@ -49,39 +65,18 @@ def iterdata(data, size=None, znth=None, nth=None, zmult=Z_SCALE):
                           {'dna': int(dna), 'microtubles': int(microtubules)}
 
 
-def iter_unique_by_count(ar, minimum=None, maximum=None, return_counts=False):
-    """
-    Filter an array by unique count.
-
-    Parameters
-    ----------
-    ar : numpy.array
-    minimum : Optional[int]
-    maximum : Optional[int]
-    return_counts : bool
-
-    Returns
-    -------
-    Union[Iterator[Any], Iterator[Tuple[Any, int]]]
-    """
-    import numpy
-
-    for item, count in zip(*numpy.unique(ar, return_counts=True)):
-        if minimum is not None and count < minimum:
-            continue
-        if maximum is not None and count > maximum:
-            continue
-        if return_counts:
-            yield item, count
-        else:
-            yield item
-
-
 def pointgen(channel, minimum=3500, **kwargs):
     """
+    Parameters
+    ----------
+    channel : str
+    minimum : int
+    kwargs : **Any
+        See `iterdata`
+
     Returns
     -------
-    Iterator[Tuple[str, hyview.Geometry]]
+    Iterator[hyview.Point]
     """
     from samples.utils import ColorGenerator
 
@@ -105,6 +100,12 @@ def pointgen(channel, minimum=3500, **kwargs):
 
 def geogen(channels, **kwargs):
     """
+    Parameters
+    ----------
+    channels : Iterable[str]
+    kwargs : **Any
+        See `pointgen`
+
     Returns
     -------
     Iterator[Tuple[hyview.Geometry, str, int]]
@@ -132,6 +133,6 @@ def geogen(channels, **kwargs):
             yield geo, 'mitosis-{}-{}'.format(chan, C4(kwargs)), frame
 
 
-def build_interesting(channels=('dna', 'microtubles'), **kwargs):
+def build_interesting(channels=('dna',), **kwargs):
     for geo, name, frame in geogen(channels, **kwargs):
         hyview.build(geo, name=name, frame=frame)
