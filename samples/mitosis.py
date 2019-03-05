@@ -107,7 +107,7 @@ def geogen(channels, **kwargs):
     """
     Returns
     -------
-    Iterator[hyview.Geometry]
+    Iterator[Tuple[hyview.Geometry, str, int]]
     """
     from collections import defaultdict
     from hyview.c4 import C4
