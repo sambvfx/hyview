@@ -96,20 +96,20 @@ def _b58encode(b):
     -------
     str
     """
-    __b58chars = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
-    __b58base = len(__b58chars)
+    _b58chars = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
+    _b58base = len(_b58chars)
     if six.PY2:
         long_value = int(b.encode("hex_codec"), 16)
     else:
         long_value = int(b.hex(), 16)
 
     result = ''
-    while long_value >= __b58base:
-        div, mod = divmod(long_value, __b58base)
-        result = __b58chars[mod] + result
+    while long_value >= _b58base:
+        div, mod = divmod(long_value, _b58base)
+        result = _b58chars[mod] + result
         long_value = div
 
-    result = __b58chars[long_value] + result
+    result = _b58chars[long_value] + result
 
     return result
 
@@ -146,6 +146,8 @@ class C4(object):
     """
     _hashers = []  # type: List[Tuple[Callable[Any, bool], Callable[Any, Union[bytes, Iterator[bytes]]]]]
 
+    ID_LENGTH = 90
+
     @classmethod
     def register(cls, claim_func):
         """
@@ -167,22 +169,25 @@ class C4(object):
         return _deco
 
     def __init__(self, *objects):
+        """
+        Parameters
+        ----------
+        objects : *Any
+        """
         self._hash = hashlib.sha512()
         if objects:
             self.update(*objects)
 
     def __str__(self):
-        c4_id_length = 90
         b58_hash = _b58encode(self._hash.digest())
 
         # pad with '1's if needed
         padding = ''
-        if len(b58_hash) < (c4_id_length - 2):
-            padding = ('1' * (c4_id_length - 2 - len(b58_hash)))
+        if len(b58_hash) < (self.ID_LENGTH - 2):
+            padding = ('1' * (self.ID_LENGTH - 2 - len(b58_hash)))
 
         # combine to form C4 ID
-        string_id = 'c4' + padding + b58_hash
-        return string_id
+        return 'c4' + padding + b58_hash
 
     def __repr__(self):
         return '<{}({!r})>'.format(self.__class__.__name__, str(self))
@@ -256,8 +261,11 @@ def _claim_filepath(obj):
     -------
     bool
     """
-    return isinstance(obj, tuple(PATH_TYPES)) and os.sep in str(obj) and \
-           os.path.exists(obj)
+    if not isinstance(obj, tuple(PATH_TYPES)):
+        return False
+
+    obj = os.path.expanduser(os.path.expandvars(obj))
+    return os.sep in str(obj) and os.path.exists(obj)
 
 
 @C4.register(_claim_filepath)
@@ -273,18 +281,25 @@ def hash_filepath(obj):
     -------
     Iterator[bytes]
     """
-    with open(obj, 'r') as f:
-        block_size = 100 * (2 ** 20)
-        cnt_blocks = 0
-        while True:
-            try:
-                block = f.read(block_size)
-            except UnicodeDecodeError:
-                break
-            if not block:
-                break
-            if six.PY3:
-                block = block.encode('utf-8')
-            yield block
-            cnt_blocks = cnt_blocks + 1
-        f.close()
+    obj = os.path.expanduser(os.path.expandvars(obj))
+
+    # Providing a directory will crawl all contents within.
+    if os.path.isdir(obj):
+        for root, dirs, files in os.walk(obj):
+            for f in files:
+                for block in hash_filepath(os.path.join(root, f)):
+                    yield block
+
+    else:
+        with open(obj, 'r') as f:
+            block_size = 100 * (2 ** 20)
+            while True:
+                try:
+                    block = f.read(block_size)
+                except UnicodeDecodeError:
+                    break
+                if not block:
+                    break
+                if six.PY3:
+                    block = block.encode('utf-8')
+                yield block

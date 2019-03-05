@@ -1,5 +1,3 @@
-"""
-"""
 import sys
 import os
 import functools
@@ -17,7 +15,7 @@ _logger = hyview.get_logger(__name__)
 ModuleType = type(sys)
 
 
-RPC_METHODS = {}
+RPC_METHODS = {}  # type: Dict[str, Callable]
 
 
 def rpc(name=None):

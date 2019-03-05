@@ -1,5 +1,8 @@
+## Overview
+`hyview` is a library for interacting with Houdini remotely. It provides a simple API for remote calls and ships with functionality for sending geometry.
+
 ## Install Houdini
-This library uses Houdini to visualize data. The apprentice version is available for free and comes with limited restrictions:
+The apprentice version is available for free and comes with limited restrictions:
 
 > Houdini Apprentice is a free version of Houdini FX which can be used by students, artists and hobbyists to create personal non-commercial projects. 
 
@@ -57,7 +60,7 @@ samples.rand.random_data()
 `hyview` is built around a few simple concepts.
 
 - Simple interface
-  - Abstract representations of houdini data types. `hyview.Geometry`, `hyview.Primitive` and `hyview.Point`
+  - Abstract representations of houdini data types. `hyview.Geometry` and `hyview.Point`
   - Build a point cloud by simply passing a `hyview.Geometry` object to `hyview.build`
   - Support for passing custom Houdini attributes. See `hyview.AttributeDefinition`.
 - Aggressive and safe caching
@@ -76,34 +79,27 @@ import hyview
 
 
 @hyview.rpc()
-def mesh_all(names=None):
+def mesh_all():
     """
     Create a particle fliud mesh for all geo within the hyview root subnet.
-
-    Parameters
-    ----------
-    names : Optional[str]
     """
     import hyview.hy.core
     
     for node in hyview.hy.core.root().children():
-        if names and node.name() not in names:
-            continue
-            
+
         last = node.children()[-1]
         
         if 'particlefluidsurface' in last.type().name():
             # already meshed
             continue
-            
+
         p = node.createNode('particlefluidsurface')
         p.parm('particlesep').set(8)
         p.parm('transferattribs').set('Cd')
         p.setInput(0, last)
         p.setDisplayFlag(True)
 ```
-
-To ensure this RPC method is available, we need to ensure it's found by the server running in Houdini. There are a few ways to accomplish this:
+To ensure this RPC method is available in Houdini we need to make sure it's picked up by the server we start. There are a few ways to accomplish this:
 
 When starting the server, optional path(s) can be provided which will be added to the RPC registry.
 
@@ -118,7 +114,7 @@ Or set them as environment variables before you launch.
 export HYVIEW_PLUGIN_PATH=/path/to/mymodule.py:/path/to/manypluginsdir
 ```
 
-You can then call this procedure like you would normally - which will issue the RPC command to execute it remotely.
+You can then call this procedure like you would normally (from another python session) - which will issue the RPC command to execute it remotely.
 
 ```python
 import mymodule
@@ -127,7 +123,9 @@ mymodule.mesh_all()
 
 Note you'll need to scope all Houdini specific imports.
 
-## Neuron Sample
+## Samples
+
+###### Neuron
 
 Download sample data from https://cremi.org/static/data/sample_A_20160501.hdf
 
@@ -153,3 +151,5 @@ Generate some sample data.
 import samples.neuron
 samples.neuron.build_interesting()
 ```
+
+###### Mitosis

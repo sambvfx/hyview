@@ -8,13 +8,12 @@ from collections import defaultdict
 
 import hyview
 import hyview.log
-import samples.utils
 
 
 _logger = hyview.log.get_logger(__name__)
 
 
-TEST_H5PY_SAMPLE_PATH = os.path.join(
+SAMPLE_PATH = os.path.join(
     os.path.dirname(__file__),
     '_data',
     'sample_A_20160501.hdf')
@@ -48,6 +47,94 @@ def mesh_all(names=None):
         p.setDisplayFlag(True)
 
 
+def iterfilter(images, labels, size=None, znth=None, nth=None, zmult=10):
+    """
+    Helper to iterate and filter over dataset.
+
+    Parameters
+    ----------
+    images : numpy.array
+    labels : numpy.array
+    size : Optional[int]
+    znth : Optional[int]
+    nth : Optionl[int]
+    zmult : int
+        Scale multiplier for z coordinate.
+
+    Returns
+    -------
+    Iterator[Tuple[int, int, int, int, int]]
+    """
+    import itertools
+
+    if size:
+        images = images[:size]
+        labels = labels[:size]
+
+    def islice(it, n):
+        if n:
+            return itertools.islice(it, 0, None, n)
+        return it
+
+    for z, (image, zlabels) in islice(enumerate(zip(images, labels)), znth):
+        for y, (row, ylabels) in islice(enumerate(zip(image, zlabels)), nth):
+            for x, (c, label) in islice(enumerate(zip(row, ylabels)), nth):
+                yield int(label), int(x), int(y), int(z * zmult), int(c)
+
+
+def iter_unique_by_count(ar, minimum=None, maximum=None, return_counts=False):
+    """
+    Filter an array by unique count.
+
+    Parameters
+    ----------
+    ar : numpy.array
+    minimum : Optional[int]
+    maximum : Optional[int]
+    return_counts : bool
+
+    Returns
+    -------
+    Union[Iterator[Any], Iterator[Tuple[Any, int]]]
+    """
+    import numpy
+
+    for item, count in zip(*numpy.unique(ar, return_counts=True)):
+        if minimum is not None and count < minimum:
+            continue
+        if maximum is not None and count > maximum:
+            continue
+        if return_counts:
+            yield item, count
+        else:
+            yield item
+
+
+def load_data_from_h5py(path, *keys):
+    """
+    Examples
+    --------
+    >>> images, lables = load_data_from_h5py(
+    ...     '/path/to/file.h5py',
+    ...     'volumes/raw',
+    ...     'volumes/labels/neuron_ids'
+    ... )
+
+    Parameters
+    ----------
+    path : str
+    keys : *str
+
+    Returns
+    -------
+    Tuple[Any, ...]
+    """
+    import os
+    import h5py
+    data = h5py.File(os.path.expandvars(os.path.expanduser(path)))
+    return tuple(data[x] for x in keys)
+
+
 def pointgen(images, labels, colorize=False, filters=None, size=None, znth=3,
              nth=8, zmult=10):
     """
@@ -76,8 +163,13 @@ def pointgen(images, labels, colorize=False, filters=None, size=None, znth=3,
 
     colors = ColorGenerator()
 
-    it = samples.utils.iterfilter(
-        images, labels, size=size, znth=znth, nth=nth, zmult=zmult)
+    it = iterfilter(
+        images, labels,
+        size=size,
+        znth=znth,
+        nth=nth,
+        zmult=zmult
+    )
 
     for label, x, y, z, c in it:
         if filters and label not in filters:
@@ -144,8 +236,7 @@ def geogen(images, labels, group=None, **kwargs):
     ]
 
     for k, v in points.items():
-        geo = hyview.Geometry(
-            attributes=attributes, primitives=[hyview.Primitive(points=v)])
+        geo = hyview.Geometry(attributes=attributes, points=v)
         if k == '*':
             name = str(C4(kwargs))
         else:
@@ -161,8 +252,8 @@ def get_test_data():
     -------
     Tuple[numpy.array, numpy.array]
     """
-    return samples.utils.load_data_from_h5py(
-        TEST_H5PY_SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
+    return load_data_from_h5py(
+        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
 
 
 def build_neuron_sample(images, labels, **kwargs):
@@ -190,8 +281,8 @@ def build_slice(nth=3):
     nth : int
         Density of the points created. Skips to every `nth` point.
     """
-    images, labels = samples.utils.load_data_from_h5py(
-        TEST_H5PY_SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
+    images, labels = load_data_from_h5py(
+        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
 
     build_neuron_sample(
         images, labels,
@@ -211,14 +302,17 @@ def build_interesting(minimum=2000000, mesh=True):
     mesh : bool
         Mesh the points.
     """
-    _logger.info('Loading data from {!r}...'.format(TEST_H5PY_SAMPLE_PATH))
-    images, labels = samples.utils.load_data_from_h5py(
-        TEST_H5PY_SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
+    _logger.info('Loading data from {!r}...'.format(SAMPLE_PATH))
+
+    images, labels = load_data_from_h5py(
+        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
 
     _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
-    filters = list(samples.utils.iter_unique_by_count(labels, minimum=minimum))
+
+    filters = list(iter_unique_by_count(labels, minimum=minimum))
 
     _logger.info('Filtering data...')
+
     for name, geo in geogen(
             images, labels,
             group='label',
@@ -227,6 +321,7 @@ def build_interesting(minimum=2000000, mesh=True):
             size=0, znth=0, nth=8, zmult=10):
 
         _logger.info('Sending {!r} to Houdini...'.format(name))
+
         hyview.build(geo, name=name)
 
     if mesh:

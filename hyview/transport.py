@@ -17,8 +17,8 @@ class Client(zerorpc.Client):
 class Server(zerorpc.Server):
     """
     Slightly extended version of the `zerorpc.Server` that fixes some issues
-    with ipython tab completion (over rpc) and promotes methods with the
-    appropriate zerorpc decorators.
+    with ipython tab completion (for objects over RPC) and promotes methods
+    with the appropriate zerorpc decorators.
     """
     def __init__(self, methods=None, name=None, context=None, pool_size=None,
                  heartbeat=5):

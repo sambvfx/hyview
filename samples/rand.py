@@ -5,9 +5,6 @@ def random_data(size=200):
 
     from samples.utils import point_generator
 
-    primitive = hyview.Primitive(
-        points=list(point_generator(size=size)))
-
     attributes = [
         hyview.AttributeDefinition(
             name='Cd', type='Point', default=(0.1, 0.1, 0.1)),
@@ -18,6 +15,6 @@ def random_data(size=200):
     ]
 
     geo = hyview.Geometry(
-        attributes=attributes, primitives=[primitive])
+        attributes=attributes, points=point_generator(size=size))
 
     hyview.build(geo)
