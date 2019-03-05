@@ -47,6 +47,43 @@ def mesh_all(names=None):
         p.setDisplayFlag(True)
 
 
+def load_data_from_h5py(path, *keys):
+    """
+    Examples
+    --------
+    >>> images, lables = load_data_from_h5py(
+    ...     '/path/to/file.h5py',
+    ...     'volumes/raw',
+    ...     'volumes/labels/neuron_ids'
+    ... )
+
+    Parameters
+    ----------
+    path : str
+    keys : *str
+
+    Returns
+    -------
+    Tuple[Any, ...]
+    """
+    import os
+    import h5py
+    data = h5py.File(os.path.expandvars(os.path.expanduser(path)))
+    return tuple(data[x] for x in keys)
+
+
+def load_data():
+    """
+    Gets "images" and "labels" test numpy arrays.
+
+    Returns
+    -------
+    Tuple[numpy.array, numpy.array]
+    """
+    return load_data_from_h5py(
+        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
+
+
 def iterfilter(images, labels, size=None, znth=None, nth=None, zmult=10):
     """
     Helper to iterate and filter over dataset.
@@ -108,31 +145,6 @@ def iter_unique_by_count(ar, minimum=None, maximum=None, return_counts=False):
             yield item, count
         else:
             yield item
-
-
-def load_data_from_h5py(path, *keys):
-    """
-    Examples
-    --------
-    >>> images, lables = load_data_from_h5py(
-    ...     '/path/to/file.h5py',
-    ...     'volumes/raw',
-    ...     'volumes/labels/neuron_ids'
-    ... )
-
-    Parameters
-    ----------
-    path : str
-    keys : *str
-
-    Returns
-    -------
-    Tuple[Any, ...]
-    """
-    import os
-    import h5py
-    data = h5py.File(os.path.expandvars(os.path.expanduser(path)))
-    return tuple(data[x] for x in keys)
 
 
 def pointgen(images, labels, colorize=False, filters=None, size=None, znth=3,
@@ -244,18 +256,6 @@ def geogen(images, labels, group=None, **kwargs):
         yield name, geo
 
 
-def get_test_data():
-    """
-    Gets "images" and "labels" test numpy arrays.
-
-    Returns
-    -------
-    Tuple[numpy.array, numpy.array]
-    """
-    return load_data_from_h5py(
-        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
-
-
 def build_neuron_sample(images, labels, **kwargs):
     """
     Helper to visualize the neuron dataset.
@@ -281,8 +281,7 @@ def build_slice(nth=3):
     nth : int
         Density of the points created. Skips to every `nth` point.
     """
-    images, labels = load_data_from_h5py(
-        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
+    images, labels = load_data()
 
     build_neuron_sample(
         images, labels,
@@ -304,8 +303,7 @@ def build_interesting(minimum=2000000, mesh=True):
     """
     _logger.info('Loading data from {!r}...'.format(SAMPLE_PATH))
 
-    images, labels = load_data_from_h5py(
-        SAMPLE_PATH, 'volumes/raw', 'volumes/labels/neuron_ids')
+    images, labels = load_data()
 
     _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
 

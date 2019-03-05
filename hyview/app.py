@@ -31,7 +31,7 @@ class ApplicationInterface(object):
         self._active = None  # type: hyview.interface.Geometry
         self.is_done = Event()
 
-    def build(self, obj, name=None):
+    def build(self, obj, name=None, frame=1):
         """
         Build a houdini object remotely.
 
@@ -54,7 +54,7 @@ class ApplicationInterface(object):
 
         self._active = obj
 
-        hyview.hy.implementation.create(name)
+        hyview.hy.implementation.create(name, frame)
 
         # block until complete is called
         self.is_done.wait()
@@ -148,7 +148,7 @@ def app():
     return App(ApplicationInterface())
 
 
-def build(obj, name=None):
+def build(obj, name=None, frame=1):
     """
     Build a houdini object remotely.
 
@@ -157,5 +157,7 @@ def build(obj, name=None):
     obj : hyview.Geometry
     name : Optional[str]
         Unique identifier
+    frame : int
+        Represents time.
     """
-    app().interface.build(obj, name=name)
+    app().interface.build(obj, name=name, frame=frame)

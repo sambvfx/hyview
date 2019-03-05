@@ -113,7 +113,7 @@ def cook_complete(node):
 
 
 @hyview.rpc()
-def create(name, cache=True):
+def create(name, frame=1, cache=True):
     """
     Create a new geometry.
 
@@ -123,15 +123,17 @@ def create(name, cache=True):
     Parameters
     ----------
     name : str
+    frame : int
     cache : bool
         Use existing cached files with `name` identifier if it exists.
     """
+    import hou
     from hyview.hy.core import root, BatchUpdate, reformat_python
 
-    if name in [x.name() for x in root().children()]:
-        raise ValueError('{!r} already exists'.format(name))
+    hou.setFrame(frame)
 
-    cache_path = os.path.join(CACHE_DIR, '{}.bgeo'.format(name))
+    fpath = os.path.join(CACHE_DIR, '{}.$F4.bgeo'.format(name))
+    cache_path = hou.expandString(fpath)
 
     use_cache = False
     if os.path.exists(cache_path):
@@ -140,13 +142,17 @@ def create(name, cache=True):
         else:
             use_cache = True
 
+    for node in root().children():
+        if node.name() == name:
+            node.destroy()
+
     with BatchUpdate():
 
         geo = root().createNode('geo', node_name=name)
         geo.moveToGoodPosition()
 
         fnode = geo.createNode('file')
-        fnode.parm('file').set(cache_path)
+        fnode.parm('file').set(fpath)
         fnode.parm('filemode').set(0)
 
         signal_node = geo.createNode('python')
