@@ -175,3 +175,39 @@ def create(name, frame=1, cache=True):
 
         fnode.moveToGoodPosition()
         signal_node.moveToGoodPosition()
+
+
+# Provided helper methods that are more for examples.
+
+
+@hyview.rpc()
+def mesh_all(**kwargs):
+    """
+    Create a particle fliud mesh for all geo within the hyview root subnet.
+
+    Parameters
+    ----------
+    kwargs : **Any
+    """
+    import hyview.hy.core
+
+    kwargs.setdefault('particlesep', 8)
+    kwargs.setdefault('transferattribs', 'Cd')
+
+    for node in hyview.hy.core.root().children():
+
+        last = node.children()[-1]
+
+        if 'particlefluidsurface' in last.type().name():
+            # already meshed
+            continue
+
+        p = node.createNode('particlefluidsurface')
+
+        # apply parm values
+        for k, v in kwargs.items():
+            p.parm(k).set(v)
+            p.parm(k).set(v)
+
+        p.setInput(0, last)
+        p.setDisplayFlag(True)

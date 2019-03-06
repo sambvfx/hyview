@@ -52,7 +52,7 @@ This will start the server in Houdini we can interact with.
 Start up another python process (which can be python 2/3) and send some test data to it to ensure it works:
 ```python
 import samples.rand
-samples.rand.random_data()
+samples.rand.sample()
 ```
 
 ## Basics
@@ -133,23 +133,24 @@ Place the sample file in `./samples/_data`
 
 > NOTE: You'll have to `pip install h5py` to load the data.
 
-When starting Houdini server, include the `samples/neuron.py` path to ensure it registers the `mesh_all` rpc method.
-
-```python
-import os
-import inspect
-import hyview
-hyview.start_houdini(os.path.join(
-    os.path.dirname(os.path.dirname(inspect.getabsfile(hyview))),
-    'samples',
-    'neuron.py'))
-```
-
 Generate some sample data.
 
 ```python
 import samples.neuron
-samples.neuron.build_interesting()
+samples.neuron.sample()
 ```
 
 ###### Mitosis
+
+Download sample data from https://www.dropbox.com/s/dnq0ag1xbc6ft2u/mitosis.tif?dl=0
+
+Place the sample file in `./samples/_data`
+
+> NOTE: You'll have to `pip install scikit-image` to load the data.
+
+Generate some sample data.
+
+```python
+import samples.mitosis
+samples.mitosis.sample()
+```

@@ -19,32 +19,43 @@ SAMPLE_PATH = os.path.join(
     'sample_A_20160501.hdf')
 
 
-@hyview.rpc()
-def mesh_all(names=None):
+def sample(minimum=2000000, mesh=True):
     """
-    Create a particle fliud mesh for all geo within the hyview root subnet.
+    Visualize interesting data structures within the neuron dataset.
 
     Parameters
     ----------
-    names : Optional[str]
+    minimum : int
+        Filter to labels that have point counts over this number.
+    mesh : bool
+        Mesh the points.
     """
-    import hyview.hy.core
+    import hyview.hy.implementation
 
-    for node in hyview.hy.core.root().children():
-        if names and node.name() not in names:
-            continue
+    _logger.info('Loading data from {!r}...'.format(SAMPLE_PATH))
 
-        last = node.children()[-1]
+    images, labels = load_data()
 
-        if 'particlefluidsurface' in last.type().name():
-            # already meshed
-            continue
+    _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
 
-        p = node.createNode('particlefluidsurface')
-        p.parm('particlesep').set(8)
-        p.parm('transferattribs').set('Cd')
-        p.setInput(0, last)
-        p.setDisplayFlag(True)
+    filters = list(iter_unique_by_count(labels, minimum=minimum))
+
+    _logger.info('Filtering data...')
+
+    for name, geo in geogen(
+            images, labels,
+            group='label',
+            colorize=True,
+            filters=filters,
+            size=0, znth=0, nth=8, zmult=10):
+
+        _logger.info('Sending {!r} to Houdini...'.format(name))
+
+        hyview.build(geo, name=name)
+
+    if mesh:
+        _logger.info('Meshing all geo...')
+        hyview.hy.implementation.mesh_all(particlesep=8)
 
 
 def load_data_from_h5py(path, *keys):
@@ -288,40 +299,3 @@ def build_slice(nth=3):
         group=None,
         colorize=False,
         size=1, znth=0, nth=nth, zmult=10)
-
-
-def build_interesting(minimum=2000000, mesh=True):
-    """
-    Visualize interesting data structures within the neuron dataset.
-
-    Parameters
-    ----------
-    minimum : int
-        Filter to labels that have point counts over this number.
-    mesh : bool
-        Mesh the points.
-    """
-    _logger.info('Loading data from {!r}...'.format(SAMPLE_PATH))
-
-    images, labels = load_data()
-
-    _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
-
-    filters = list(iter_unique_by_count(labels, minimum=minimum))
-
-    _logger.info('Filtering data...')
-
-    for name, geo in geogen(
-            images, labels,
-            group='label',
-            colorize=True,
-            filters=filters,
-            size=0, znth=0, nth=8, zmult=10):
-
-        _logger.info('Sending {!r} to Houdini...'.format(name))
-
-        hyview.build(geo, name=name)
-
-    if mesh:
-        _logger.info('Meshing all geo...')
-        mesh_all()

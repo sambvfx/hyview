@@ -17,37 +17,64 @@ SAMPLE_PATH = os.path.join(
     '_data',
     'mitosis.tif')
 
-# TODO: Confirm this multiplier...
-Z_SCALE = 5.0
+# DEFAULTS
+DEFAULTS = {
+    'size': None,
+    'znth': None,
+    'nth': None,
+    'zmult': 5.0,
+    'colorize': False,
+    'minimum': 0.7,
+    'channels': ('dna',),
+}
+
+
+def sample(**kwargs):
+    """
+    Build a sample of the mitosis data set.
+    """
+    for geo, name, frame in geogen(**kwargs):
+        hyview.build(geo, name=name, frame=frame)
 
 
 def load_data():
+    """
+    Load the dataset from disk.
+
+    Returns
+    -------
+    numpy.array
+    """
     from skimage import io
 
     # 5D array (time, z, y, x, channels(dna, microtubles))
-    sample = io.imread(SAMPLE_PATH)
-
-    return sample
+    return io.imread(SAMPLE_PATH)
 
 
-def iterdata(data, size=None, znth=None, nth=None, zmult=Z_SCALE):
+def iterdata(data, **kwargs):
     """
     Helper to iterate over the dataset.
 
     Parameters
     ----------
     data : numpy.array
-    size : Optional[int]
-    znth : Optional[int]
-    nth : Optionl[int]
-    zmult : int
-        Scale multiplier for z coordinate.
+    kwargs : **Any
+        size : Optional[int]
+        znth : Optional[int]
+        nth : Optionl[int]
+        zmult : int
+            Scale multiplier for z coordinate.
 
     Returns
     -------
-    Iterator[Tuple[int, int, int, int, Dict[str, int]]]
+    Iterator[Tuple[int, int, int, int, Dict[str, float]]]
     """
     import itertools
+
+    size = kwargs.get('size', DEFAULTS['size'])
+    znth = kwargs.get('znth', DEFAULTS['znth'])
+    nth = kwargs.get('nth', DEFAULTS['nth'])
+    zmult = kwargs.get('zmult', DEFAULTS['zmult'])
 
     if size:
         data = data[:size]
@@ -60,25 +87,30 @@ def iterdata(data, size=None, znth=None, nth=None, zmult=Z_SCALE):
     for time, z_arrays in enumerate(data):
         for z, y_arrays in enumerate(islice(z_arrays, znth)):
             for y, x_arrays in enumerate(islice(y_arrays, nth)):
+                maximum = float(x_arrays.max())
                 for x, (dna, microtubules) in enumerate(islice(x_arrays, nth)):
                     yield int(time + 1), int(x), int(y), int(z * zmult), \
-                          {'dna': int(dna), 'microtubles': int(microtubules)}
+                          {'dna': float(dna / maximum),
+                           'microtubles': float(microtubules / maximum)}
 
 
-def pointgen(channel, minimum=3500, **kwargs):
+def pointgen(channel, **kwargs):
     """
     Parameters
     ----------
     channel : str
-    minimum : int
     kwargs : **Any
-        See `iterdata`
+        colorize : bool
+        minimum : float
 
     Returns
     -------
     Iterator[hyview.Point]
     """
     from samples.utils import ColorGenerator
+
+    minimum = kwargs.get('minimum', DEFAULTS['minimum'])
+    colorize = kwargs.get('colorize', DEFAULTS['colorize'])
 
     colors = ColorGenerator()
 
@@ -88,23 +120,26 @@ def pointgen(channel, minimum=3500, **kwargs):
         value = channels[channel]
         if minimum and value < minimum:
             continue
-        color = colors.get(channel)
+        if colorize:
+            color = colors.get(channel)
+        else:
+            color = (value, value, value)
         yield hyview.Point(
             x=x, y=y, z=z, attrs={
                 'Cd': color,
+                'Alpha': value,
                 'time': time,
                 channel: value,
             }
         )
 
 
-def geogen(channels, **kwargs):
+def geogen(**kwargs):
     """
     Parameters
     ----------
-    channels : Iterable[str]
     kwargs : **Any
-        See `pointgen`
+        channels : Iterable[str]
 
     Returns
     -------
@@ -113,13 +148,21 @@ def geogen(channels, **kwargs):
     from collections import defaultdict
     from hyview.c4 import C4
 
+    channels = kwargs.get('channels', DEFAULTS['channels'])
+
+    # Do this for the hash!
+    for k, v in DEFAULTS.items():
+        kwargs.setdefault(k, v)
+
     attributes = [
         hyview.AttributeDefinition(
             name='Cd', type='Point', default=(0.1, 0.1, 0.1)),
         hyview.AttributeDefinition(
+            name='Alpha', type='Point', default=1.0),
+        hyview.AttributeDefinition(
             name='time', type='Point', default=-1),
         hyview.AttributeDefinition(
-            name='dna', type='Point', default=-1),
+            name='dna', type='Point', default=0.0),
         hyview.AttributeDefinition(
             name='microtubles', type='Point', default=-1),
     ]
@@ -130,9 +173,5 @@ def geogen(channels, **kwargs):
             bytime[point.attrs['time']].append(point)
         for frame, points in bytime.items():
             geo = hyview.Geometry(attributes=attributes, points=points)
-            yield geo, 'mitosis-{}-{}'.format(chan, C4(kwargs)), frame
-
-
-def build_interesting(channels=('dna',), **kwargs):
-    for geo, name, frame in geogen(channels, **kwargs):
-        hyview.build(geo, name=name, frame=frame)
+            yield geo, 'mitosis-{}-{}'.format(
+                chan, C4(kwargs)), frame

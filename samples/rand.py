@@ -1,7 +1,7 @@
 import hyview
 
 
-def random_data(size=200):
+def sample(size=200):
 
     from samples.utils import point_generator
 
