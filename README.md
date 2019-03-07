@@ -125,7 +125,11 @@ Note you'll need to scope all Houdini specific imports.
 
 ## Samples
 
-###### Neuron
+This repo contains a handful of samples to get you jump started. These are sample proof of concepts to illustrate how to use `hyview`.
+
+> NOTE: Some of these samples require files to be downloaded and/or additional python packages to be installed.
+
+#### Neuron
 
 Download sample data from https://cremi.org/static/data/sample_A_20160501.hdf
 
@@ -140,7 +144,7 @@ import samples.neuron
 samples.neuron.sample()
 ```
 
-###### Mitosis
+#### Mitosis
 
 Download sample data from https://www.dropbox.com/s/dnq0ag1xbc6ft2u/mitosis.tif?dl=0
 

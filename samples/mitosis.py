@@ -24,7 +24,7 @@ DEFAULTS = {
     'nth': None,
     'zmult': 5.0,
     'colorize': False,
-    'minimum': 0.7,
+    'minimum': 0.5,
     'channels': ('dna',),
 }
 
@@ -87,11 +87,12 @@ def iterdata(data, **kwargs):
     for time, z_arrays in enumerate(data):
         for z, y_arrays in enumerate(islice(z_arrays, znth)):
             for y, x_arrays in enumerate(islice(y_arrays, nth)):
-                maximum = float(x_arrays.max())
+                minimum = float(x_arrays.min())
+                maximum = float(x_arrays.max()) - minimum
                 for x, (dna, microtubules) in enumerate(islice(x_arrays, nth)):
                     yield int(time + 1), int(x), int(y), int(z * zmult), \
-                          {'dna': float(dna / maximum),
-                           'microtubles': float(microtubules / maximum)}
+                          {'dna': float(dna - minimum) / maximum,
+                           'microtubles': float(microtubules - minimum) / maximum}
 
 
 def pointgen(channel, **kwargs):
