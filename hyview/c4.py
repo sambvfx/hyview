@@ -1,5 +1,33 @@
 """
 Module for generating C4 ids.
+
+A C4 hash is essentially a `hashlib.sha512()` hash  with certain characters
+removed to make the ids easy to pass around.
+
+Provided the same data a C4 id should be the same.
+
+Examples
+--------
+>>> c4 = C4('foo')
+>>> str(c4)
+# 'c45XyDwWmrPQwJPdULBhma6LGNaLghKtN7R9vLn2tFrepZJ9jJFSDzpCKei11EgA5r1veenBu3Q8qfvWeDuPc7fJK2'
+
+>>> c4.update('bar')
+>>> str(c4)
+# 'c41cXCrFq1EfA5ADVN2C8Nev2kN35H3QEarxFe9h39yh7QzoxK4DKaHUJ3RYvWC1wxyFJjwmHQqUucNwCYn2hFvEBF'
+
+>>> assert c4 == C4('foo', 'bar')
+
+C4 also consider the contents of any filepaths provided. And recursively
+crawls directories.
+
+>>> with open('/tmp/c4example', 'wb') as f:
+...     f.write(b'foo')
+>>> c4_1 = C4('/tmp/c4example')
+>>> with open('/tmp/c4example', 'wb') as f:
+...     f.write(b'bar')
+>>> c4_2 = C4('/tmp/c4example')
+>>> assert c4_1 != c4_2
 """
 import os
 import inspect
@@ -116,33 +144,7 @@ def _b58encode(b):
 
 class C4(object):
     """
-    An object used to generate a C4 id for provided data. Provided the same
-    data this will generate the same id string.
-
-    A C4 hash is essentially a `hashlib.sha512()` hash  with certain
-    characters removed to make the ids easy to pass around.
-
-    Examples
-    --------
-    >>> c4 = C4('foo')
-    >>> str(c4)
-    # 'c45XyDwWmrPQwJPdULBhma6LGNaLghKtN7R9vLn2tFrepZJ9jJFSDzpCKei11EgA5r1veenBu3Q8qfvWeDuPc7fJK2'
-
-    >>> c4.update('bar')
-    >>> str(c4)
-    # 'c41cXCrFq1EfA5ADVN2C8Nev2kN35H3QEarxFe9h39yh7QzoxK4DKaHUJ3RYvWC1wxyFJjwmHQqUucNwCYn2hFvEBF'
-
-    >>> assert c4 == C4('foo', 'bar')
-
-    C4 also consider the contents of any filepaths provided.
-
-    >>> with open('/tmp/c4example', 'wb') as f:
-    ...     f.write(b'foo')
-    >>> c4_1 = C4('/tmp/c4example')
-    >>> with open('/tmp/c4example', 'wb') as f:
-    ...     f.write(b'bar')
-    >>> c4_2 = C4('/tmp/c4example')
-    >>> assert c4_1 != c4_2
+    The main object used to calculate a C4 id.
     """
     _hashers = []  # type: List[Tuple[Callable[Any, bool], Callable[Any, Union[bytes, Iterator[bytes]]]]]
 

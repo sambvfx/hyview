@@ -1,3 +1,6 @@
+"""
+Helper methods for hyview in Houdini.
+"""
 import hou
 
 

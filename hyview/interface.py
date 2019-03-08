@@ -1,5 +1,7 @@
 """
 Abstract representations of Houdini objects.
+
+These objects act as the interface between the python sessions.
 """
 import attr
 from attr.validators import in_ as choices
@@ -13,6 +15,9 @@ class AttributeDefinition(object):
     Abstract representation of a Houdini attribute. This is the definition of
     what attributes look like, and the values should be part of other objects
     `attrs` attributes (e.g. `Point.attrs`).
+
+    Default values also define the type to expect, and will error if the types
+    do not match.
 
     Houdini reserves certain attribute names for specific purposes.
     For a complete list visit:
@@ -48,9 +53,9 @@ class Point(object):
     For reference:
         http://www.sidefx.com/docs/houdini/model/points.html
     """
-    x = attr.ib(type=int)
-    y = attr.ib(type=int)
-    z = attr.ib(type=int)
+    x = attr.ib(type=float)
+    y = attr.ib(type=float)
+    z = attr.ib(type=float)
     attrs = attr.ib(
         type=Dict[str, Any],
         default=attr.Factory(dict))

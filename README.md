@@ -51,8 +51,8 @@ This will start the server in Houdini we can interact with.
 
 Start up another python process (which can be python 2/3) and send some test data to it to ensure it works:
 ```python
-import samples.rand
-samples.rand.sample()
+import hyview_samples.rand
+hyview_samples.rand.sample()
 ```
 
 ## Basics
@@ -133,15 +133,15 @@ This repo contains a handful of samples to get you jump started. These are sampl
 
 Download sample data from https://cremi.org/static/data/sample_A_20160501.hdf
 
-Place the sample file in `./samples/_data`
+Place the sample file in `./hyview_samples/_data`
 
 > NOTE: You'll have to `pip install h5py` to load the data.
 
 Generate some sample data.
 
 ```python
-import samples.neuron
-samples.neuron.sample()
+import hyview_samples.neuron
+hyview_samples.neuron.sample()
 ```
 
 #### Mitosis
@@ -155,6 +155,6 @@ Place the sample file in `./samples/_data`
 Generate some sample data.
 
 ```python
-import samples.mitosis
-samples.mitosis.sample()
+import hyview_samples.mitosis
+hyview_samples.mitosis.sample()
 ```

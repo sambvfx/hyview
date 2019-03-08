@@ -12,7 +12,7 @@ import hyview.transport
 from hyview.constants import HOST, PORT, APP_PORT
 from hyview.c4 import C4
 
-import hyview.hy.implementation
+import hyview.hy.impl
 
 from typing import *
 
@@ -48,18 +48,18 @@ class ApplicationInterface(object):
         elif name is None:
             name = str(C4(obj))
 
-        assert name not in hyview.hy.implementation.all_nodes()
+        assert name not in hyview.hy.impl.all_nodes()
 
         _logger.debug('Starting build {!r}'.format(name))
 
         self._active = obj
 
-        hyview.hy.implementation.create(name, frame)
+        hyview.hy.impl.create(name, frame)
 
         # block until complete is called
         self.is_done.wait()
 
-        hyview.hy.implementation.sync_complete(name)
+        hyview.hy.impl.sync_complete(name)
 
         _logger.debug('Done building {!r}'.format(name))
 
