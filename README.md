@@ -1,5 +1,5 @@
 ## Overview
-`hyview` is a library for interacting with Houdini remotely. It provides a simple API for remote calls and ships with functionality for sending geometry.
+`hyview` is a library for interacting with Houdini remotely. It provides a simple API for executing remote calls and ships with functionality for sending geometry points.
 
 ## Install Houdini
 The apprentice version is available for free and comes with limited restrictions:
@@ -60,8 +60,8 @@ hyview_samples.rand.sample()
 `hyview` is built around a few simple concepts.
 
 - Simple interface
-  - Abstract representations of houdini data types. `hyview.Geometry` and `hyview.Point`
-  - Build a point cloud by simply passing a `hyview.Geometry` object to `hyview.build`
+  - Data exchange utilizes abstract representations of Houdini data types. `hyview.Geometry` and `hyview.Point`
+  - Bulid geometry in Houdini a point cloud by simply passing a `hyview.Geometry` object to `hyview.build`
   - Support for passing custom Houdini attributes. See `hyview.AttributeDefinition`.
 - Aggressive and safe caching
   - By default results are cached to disk immediately for performace. Providing the same data twice will use the disk cache if one exists.
@@ -125,11 +125,13 @@ Note you'll need to scope all Houdini specific imports.
 
 ## Samples
 
-This repo contains a handful of samples to get you jump started. These are sample proof of concepts to illustrate how to use `hyview`.
+This repo contains a handful of samples to get you jump started. These are simple proof of concepts to illustrate how to use `hyview`.
 
 > NOTE: Some of these samples require files to be downloaded and/or additional python packages to be installed.
 
 #### Neuron
+
+This is electron microscopy data and comes with a corresponding array of labels. Filtering to only specific labels provides some interesting results.
 
 Download sample data from https://cremi.org/static/data/sample_A_20160501.hdf
 
@@ -137,7 +139,7 @@ Place the sample file in `./hyview_samples/_data`
 
 > NOTE: You'll have to `pip install h5py` to load the data.
 
-Generate some sample data.
+Use the helper to view something interesting!
 
 ```python
 import hyview_samples.neuron
@@ -146,13 +148,15 @@ hyview_samples.neuron.sample()
 
 #### Mitosis
 
+This is fluorescence microscopy data over multiple time points. It's a 5D array with two channels (DNA and microtubules).
+
 Download sample data from https://www.dropbox.com/s/dnq0ag1xbc6ft2u/mitosis.tif?dl=0
 
-Place the sample file in `./samples/_data`
+Place the sample file in `./hyview_samples/_data`
 
 > NOTE: You'll have to `pip install scikit-image` to load the data.
 
-Generate some sample data.
+Use the helper to view something interesting!
 
 ```python
 import hyview_samples.mitosis

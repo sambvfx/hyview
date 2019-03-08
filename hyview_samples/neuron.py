@@ -19,12 +19,15 @@ SAMPLE_PATH = os.path.join(
     'sample_A_20160501.hdf')
 
 
-def sample(minimum=2000000, mesh=True):
+def sample(filters=None, minimum=2000000, mesh=True):
     """
     Visualize interesting data structures within the neuron dataset.
 
     Parameters
     ----------
+    filters : Optional[List[int]]
+        Provide labels to filter the dataset to manually. If not provided,
+        then it will use labels that contain more than the `minimum` points.
     minimum : int
         Filter to labels that have point counts over this number.
     mesh : bool
@@ -38,7 +41,8 @@ def sample(minimum=2000000, mesh=True):
 
     _logger.info('Finding labels with more than {!r} entries...'.format(minimum))
 
-    filters = list(iter_unique_by_count(labels, minimum=minimum))
+    if filters is None:
+        filters = list(iter_unique_by_count(labels, minimum=minimum))
 
     _logger.info('Filtering data...')
 
