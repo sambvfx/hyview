@@ -212,9 +212,9 @@ def mesh_all(**kwargs):
 
         if 'particlefluidsurface' in last.type().name():
             # already meshed
-            continue
-
-        p = node.createNode('particlefluidsurface')
+            p = last
+        else:
+            p = node.createNode('particlefluidsurface')
 
         # apply parm values
         for k, v in kwargs.items():
