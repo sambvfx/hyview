@@ -61,7 +61,7 @@ hyview_samples.rand.sample()
 
 - Simple interface
   - Data exchange utilizes abstract representations of Houdini data types. `hyview.Geometry` and `hyview.Point`
-  - Bulid geometry in Houdini a point cloud by simply passing a `hyview.Geometry` object to `hyview.build`
+  - Bulid geometry in Houdini by simply passing a `hyview.Geometry` object to `hyview.build`
   - Support for passing custom Houdini attributes. See `hyview.AttributeDefinition`.
 - Aggressive and safe caching
   - By default results are cached to disk immediately for performace. Providing the same data twice will use the disk cache if one exists.
