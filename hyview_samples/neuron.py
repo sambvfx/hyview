@@ -19,7 +19,7 @@ SAMPLE_PATH = os.path.join(
     'sample_A_20160501.hdf')
 
 
-def sample(filters=None, minimum=2000000, mesh=True):
+def sample(filters=None, minimum=2000000, nth=8, mesh=True):
     """
     Visualize interesting data structures within the neuron dataset.
 
@@ -30,6 +30,8 @@ def sample(filters=None, minimum=2000000, mesh=True):
         then it will use labels that contain more than the `minimum` points.
     minimum : int
         Filter to labels that have point counts over this number.
+    nth : int
+        Skip to every nth sample.
     mesh : bool
         Mesh the points.
     """
@@ -51,7 +53,7 @@ def sample(filters=None, minimum=2000000, mesh=True):
             group='label',
             colorize=True,
             filters=filters,
-            size=0, znth=0, nth=8, zmult=10):
+            size=0, znth=0, nth=nth, zmult=10):
 
         _logger.info('Sending {!r} to Houdini...'.format(name))
 
