@@ -129,7 +129,7 @@ This repo contains a handful of samples to get you jump started. These are simpl
 
 > NOTE: Some of these samples require files to be downloaded and/or additional python packages to be installed.
 
-#### Neuron
+#### [Neuron](hyview_samples/neuron.py)
 
 This is electron microscopy data and comes with a corresponding array of labels. Filtering to only specific labels provides some interesting results.
 
@@ -146,7 +146,7 @@ import hyview_samples.neuron
 hyview_samples.neuron.sample()
 ```
 
-#### Mitosis
+#### [Mitosis](hyview_samples/mitosis.py)
 
 This is fluorescence microscopy data over multiple time points. It's a 5D array with two channels (DNA and microtubules).
 
